@@ -1,13 +1,15 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { Settings, Menu, Search } from 'lucide-react';
+import { Settings, Menu, Search, LayoutGrid, Compass, Bookmark } from 'lucide-react';
 import IconSidebar from './components/IconSidebar';
 import SurahSidebar from './components/SurahSidebar';
 import AyahReader from './components/AyahReader';
 import SearchPanel from './components/SearchPanel';
 import SettingsPanel from './components/SettingsPanel';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
+  const router = useRouter();
   const [activeSurah, setActiveSurah] = useState(1);
   const [activePanel, setActivePanel] = useState('surah');
   const [surahSidebarOpen, setSurahSidebarOpen] = useState(false);
@@ -45,28 +47,41 @@ export default function Home() {
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg-primary)' }}>
-      {/* Mobile overlay */}
-      {isMobile && surahSidebarOpen && (
-        <div onClick={() => setSurahSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 45 }} />
+      {/* Desktop left rails */}
+      {!isMobile && (
+        <>
+          <IconSidebar activePanel={activePanel} onPanelChange={handlePanelChange} />
+          <div
+            style={{
+              width: 'var(--sidebar-surah-width)',
+              minWidth: 'var(--sidebar-surah-width)',
+              display: showLeftPanel ? 'flex' : 'none',
+              flexDirection: 'column',
+            }}
+          >
+            <SurahSidebar
+              activeSurah={activeSurah}
+              onSelect={handleSurahSelect}
+              isOpen={true}
+              onClose={() => setSurahSidebarOpen(false)}
+            />
+          </div>
+        </>
       )}
 
-      {/* Icon Sidebar */}
-      <IconSidebar activePanel={activePanel} onPanelChange={handlePanelChange} />
-
-      {/* Surah Sidebar (desktop: always in middle, mobile: drawer) */}
-      <div style={{
-        width: 'var(--sidebar-surah-width)', minWidth: 'var(--sidebar-surah-width)',
-        display: showLeftPanel ? 'flex' : (isMobile ? 'flex' : 'none'),
-        flexDirection: 'column',
-        ...(isMobile ? {
-          position: 'fixed', left: 56, top: 0, height: '100%', zIndex: 50,
-          transform: surahSidebarOpen ? 'translateX(0)' : 'translateX(-110%)',
-          transition: 'transform 0.25s ease',
-          boxShadow: surahSidebarOpen ? '4px 0 24px rgba(0,0,0,0.5)' : 'none',
-        } : {}),
-      }}>
-        <SurahSidebar activeSurah={activeSurah} onSelect={handleSurahSelect} isOpen={surahSidebarOpen} onClose={() => setSurahSidebarOpen(false)} />
-      </div>
+      {/* Mobile surah overlay (full screen, no sidebar) */}
+      {isMobile && surahSidebarOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 220, background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(6px)' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'var(--bg-secondary)' }}>
+            <SurahSidebar
+              activeSurah={activeSurah}
+              onSelect={handleSurahSelect}
+              isOpen={true}
+              onClose={() => setSurahSidebarOpen(false)}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Search modal overlay */}
       {showSearchModal && (
@@ -104,7 +119,17 @@ export default function Home() {
       )}
 
       {/* Main Content */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', minWidth: 0 }}>
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          position: 'relative',
+          minWidth: 0,
+          paddingBottom: isMobile ? 72 : 0,
+        }}
+      >
         {/* Desktop navbar */}
         {!isMobile && (
           <div className="top-header" style={{ justifyContent: 'space-between', gap: 10 }}>
@@ -159,27 +184,96 @@ export default function Home() {
 
         {/* Mobile header bar */}
         {isMobile && (
-          <div style={{
-            height: 48, background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px', flexShrink: 0,
-            marginBottom: 12,
-          }}>
-            <button onClick={() => { setActivePanel('surah'); setSurahSidebarOpen(true); }}
-              style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div
+            className="mobile-appbar"
+            style={{
+              height: 52,
+              background: 'var(--bg-secondary)',
+              borderBottom: '1px solid var(--border-color)',
+              display: 'flex',
+              alignItems: 'center',
+              padding: '0 10px',
+              flexShrink: 0,
+            }}
+          >
+            <button
+              onClick={() => {
+                setActivePanel('surah');
+                setSurahSidebarOpen(true);
+              }}
+              aria-label="Open surah list"
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 12,
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                color: 'var(--accent-gold)',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
               <Menu size={18} />
-              <span style={{ fontSize: 13 }}>Surahs</span>
             </button>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <img src="/quran%20icon.svg" alt="" width={26} height={26} style={{ display: 'block' }} />
-              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Quran Mazid</span>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 10, flex: 1, minWidth: 0 }}>
+              <span
+                style={{
+                  fontSize: 16,
+                  fontWeight: 700,
+                  color: 'var(--accent-on-primary)',
+                  letterSpacing: '0.01em',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                Quran Mazid
+              </span>
             </div>
-            <div style={{ fontSize: 14, fontWeight: 400, color: '#787D7A', lineHeight: '20px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                Read, Study, and Learn The Quran
-              </div>
-            <button onClick={() => setSettingsOpen(v => !v)}
-              style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: 4 }}>
-              <Settings size={18} />
-            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+              <button
+                onClick={() => setActivePanel('search')}
+                aria-label="Search"
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 12,
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Search size={18} />
+              </button>
+
+              <button
+                onClick={() => setSettingsOpen((v) => !v)}
+                aria-label="Display settings"
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 12,
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  color: 'var(--accent-gold)',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Settings size={18} />
+              </button>
+            </div>
           </div>
         )}
 
@@ -198,6 +292,52 @@ export default function Home() {
           onNext={() => setActiveSurah(n => Math.min(114, n + 1))}
         />
       </div>
+
+      {/* Mobile bottom navigation (reference style) */}
+      {isMobile && (
+        <div className="mobile-bottom-nav" role="navigation" aria-label="Primary">
+          <button
+            className={`mobile-bottom-nav__btn ${surahSidebarOpen ? 'active' : ''}`}
+            onClick={() => {
+              setActivePanel('surah');
+              setSettingsOpen(false);
+              setSurahSidebarOpen(true);
+            }}
+            aria-label="Surahs"
+          >
+            <LayoutGrid size={22} />
+          </button>
+          <button
+            className={`mobile-bottom-nav__btn ${activePanel === 'search' ? 'active' : ''}`}
+            onClick={() => {
+              setSurahSidebarOpen(false);
+              setSettingsOpen(false);
+              setActivePanel('search');
+            }}
+            aria-label="Search"
+          >
+            <Compass size={22} />
+          </button>
+          <button
+            className="mobile-bottom-nav__btn"
+            onClick={() => router.push('/saved')}
+            aria-label="Saved"
+          >
+            <Bookmark size={22} />
+          </button>
+          <button
+            className={`mobile-bottom-nav__btn ${settingsOpen ? 'active' : ''}`}
+            onClick={() => {
+              setSurahSidebarOpen(false);
+              setActivePanel('surah');
+              setSettingsOpen(v => !v);
+            }}
+            aria-label="Settings"
+          >
+            <Settings size={22} />
+          </button>
+        </div>
+      )}
 
       {/* Settings (desktop: always visible right sidebar) */}
       {dockSettings && (

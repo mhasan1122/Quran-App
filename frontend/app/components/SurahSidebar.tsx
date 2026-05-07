@@ -34,8 +34,8 @@ export default function SurahSidebar({ activeSurah, onSelect, isOpen, onClose }:
     <div
       className={`surah-sidebar`}
       style={{
-        width: 'var(--sidebar-surah-width)',
-        minWidth: 'var(--sidebar-surah-width)',
+        width: '100%',
+        minWidth: 0,
         background: 'var(--bg-secondary)',
         borderRight: '1px solid var(--border-color)',
         display: 'flex',

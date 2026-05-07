@@ -132,8 +132,8 @@ export default function AyahReader({ surahNumber, onPrev, onNext }: Props) {
         ayah={selectedAyah}
         onClose={() => { setAddOpen(false); setSelectedAyah(null); }}
       />
-      {/* Top Bar */}
-      <div className="top-header" style={{ justifyContent: 'space-between', gap: 8 }}>
+      {/* Desktop-only top bar (mobile uses the app-level bar in page.tsx) */}
+      <div className="top-header hide-mobile" style={{ justifyContent: 'space-between', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button
             onClick={onPrev}
@@ -146,7 +146,7 @@ export default function AyahReader({ surahNumber, onPrev, onNext }: Props) {
             }}
           >
             <ChevronLeft size={14} />
-            <span className="hide-mobile">Prev</span>
+            <span>Prev</span>
           </button>
           <button
             onClick={onNext}
@@ -158,14 +158,11 @@ export default function AyahReader({ surahNumber, onPrev, onNext }: Props) {
               padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12,
             }}
           >
-            <span className="hide-mobile">Next</span>
+            <span>Next</span>
             <ChevronRight size={14} />
           </button>
         </div>
-
         <div style={{ flex: 1 }} />
-
-        <div style={{ width: 80 }} />
       </div>
 
       {/* Content */}
@@ -246,7 +243,7 @@ export default function AyahReader({ surahNumber, onPrev, onNext }: Props) {
                       </span>
                     </div>
                     <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                      {surahData.number}:{ayah.numberInSurah}
+                      <span className="ayah-ref-mobile">{surahData.number}:{ayah.numberInSurah}</span>
                     </span>
                   </div>
 
