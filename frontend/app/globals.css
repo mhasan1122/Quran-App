@@ -57,6 +57,21 @@ html, body {
   line-height: 2.4;
   letter-spacing: 0;
 }
+.arabic-text--playing { /* used when full-ayah Play button is active */
+  text-shadow: 0 0 18px rgba(87, 170, 75, 0.18);
+}
+
+.arabic-word {
+  cursor: pointer;
+  transition: color 0.15s ease, text-shadow 0.15s ease;
+  border-radius: 4px;
+  padding: 0 1px;
+}
+.arabic-word:hover { color: #417F38; }
+.arabic-word--playing {
+  color: #417F38;
+  text-shadow: 0 0 12px rgba(65, 127, 56, 0.35);
+}
 
 .top-header {
   display: flex;

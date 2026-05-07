@@ -26,60 +26,84 @@ export default function AyahReader({ surahNumber, onPrev, onNext }: Props) {
   const [addOpen, setAddOpen] = useState(false);
   const [selectedAyah, setSelectedAyah] = useState<{ surahNumber: number; ayahNumberInSurah: number; arabicText: string; translation: string } | null>(null);
   const [playingAyah, setPlayingAyah] = useState<number | null>(null);
+  const [playingWord, setPlayingWord] = useState<{ ayah: number; word: number } | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const playSourceRef = useRef<'ayah' | 'word' | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { settings } = useSettings();
   const { getFolders, isInFolder } = useCollections();
   const arabicFontClass = getArabicFontClass(settings.arabicFont);
   const favoritesFolderId = getFolders('bookmark')[0]?.id ?? 'favorites';
 
+  const stopAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    playSourceRef.current = null;
+    setPlayingAyah(null);
+    setPlayingWord(null);
+  };
+
   useEffect(() => {
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-    };
+    return () => stopAudio();
   }, []);
 
   useEffect(() => {
-    if (audioRef.current) audioRef.current.pause();
-    audioRef.current = null;
-    setPlayingAyah(null);
+    stopAudio();
   }, [surahNumber]);
 
-  const togglePlayAyah = (ayahNumberInSurah: number, url: string | null) => {
-    if (!url) return;
-    if (playingAyah === ayahNumberInSurah && audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-      setPlayingAyah(null);
-      return;
-    }
+  const playUrl = (url: string, source: 'ayah' | 'word', onStart: () => void) => {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
     }
     const a = new Audio(url);
+    a.preload = 'auto';
     audioRef.current = a;
+    playSourceRef.current = source;
     a.addEventListener('ended', () => {
-      if (audioRef.current === a) {
-        audioRef.current = null;
-        setPlayingAyah(null);
-      }
+      if (audioRef.current === a) stopAudio();
     });
     a.addEventListener('error', () => {
-      if (audioRef.current === a) {
-        audioRef.current = null;
-        setPlayingAyah(null);
-      }
+      if (audioRef.current === a) stopAudio();
     });
-    setPlayingAyah(ayahNumberInSurah);
+    onStart();
     void a.play().catch(() => {
-      if (audioRef.current === a) {
-        audioRef.current = null;
-        setPlayingAyah(null);
-      }
+      if (audioRef.current === a) stopAudio();
+    });
+  };
+
+  const togglePlayAyah = (ayahNumberInSurah: number, url: string | null) => {
+    if (!url) return;
+    if (playSourceRef.current === 'ayah' && playingAyah === ayahNumberInSurah) {
+      stopAudio();
+      return;
+    }
+    playUrl(url, 'ayah', () => {
+      setPlayingAyah(ayahNumberInSurah);
+      setPlayingWord(null);
+    });
+  };
+
+  // Word-by-word audio uses Quran.com's free CDN:
+  //   https://audio.qurancdn.com/wbw/{SSS}_{AAA}_{WWW}.mp3
+  const wordAudioUrl = (surah: number, ayah: number, wordIndex1Based: number) =>
+    `https://audio.qurancdn.com/wbw/${String(surah).padStart(3, '0')}_${String(ayah).padStart(3, '0')}_${String(wordIndex1Based).padStart(3, '0')}.mp3`;
+
+  const playWord = (ayahNumberInSurah: number, wordIndex1Based: number) => {
+    const url = wordAudioUrl(surahNumber, ayahNumberInSurah, wordIndex1Based);
+    if (
+      playSourceRef.current === 'word' &&
+      playingWord?.ayah === ayahNumberInSurah &&
+      playingWord?.word === wordIndex1Based
+    ) {
+      stopAudio();
+      return;
+    }
+    playUrl(url, 'word', () => {
+      setPlayingWord({ ayah: ayahNumberInSurah, word: wordIndex1Based });
+      setPlayingAyah(null);
     });
   };
 
@@ -279,13 +303,33 @@ export default function AyahReader({ surahNumber, onPrev, onNext }: Props) {
                   </div>
                 </div>
 
-                {/* Arabic Text */}
-                <p
-                  className={`arabic-text ${arabicFontClass}`}
-                  style={{ fontSize: settings.arabicFontSize, color: 'var(--text-primary)', marginBottom: 14, paddingBottom: 14, borderBottom: settings.showTranslation ? '1px solid var(--border-color)' : 'none' }}
-                >
-                  {ayah.text}
-                </p>
+                {/* Arabic Text — click any word to play it */}
+                {(() => {
+                  const words = ayah.text.split(/\s+/).filter(Boolean);
+                  return (
+                    <p
+                      className={`arabic-text ${arabicFontClass} ${playingAyah === ayah.numberInSurah ? 'arabic-text--playing' : ''}`}
+                      style={{ fontSize: settings.arabicFontSize, color: 'var(--text-primary)', marginBottom: 14, paddingBottom: 14, borderBottom: settings.showTranslation ? '1px solid var(--border-color)' : 'none' }}
+                    >
+                      {words.map((word, idx) => {
+                        const wordNum = idx + 1;
+                        const isPlaying =
+                          playingWord?.ayah === ayah.numberInSurah && playingWord?.word === wordNum;
+                        return (
+                          <span
+                            key={`${ayah.numberInSurah}-${wordNum}`}
+                            className={`arabic-word ${isPlaying ? 'arabic-word--playing' : ''}`}
+                            onClick={() => playWord(ayah.numberInSurah, wordNum)}
+                            title="Click to play this word"
+                          >
+                            {word}
+                            {idx < words.length - 1 ? ' ' : ''}
+                          </span>
+                        );
+                      })}
+                    </p>
+                  );
+                })()}
 
                 {/* Translation */}
                 {settings.showTranslation && (
