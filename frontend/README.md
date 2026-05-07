@@ -1,36 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Quran Mazid  (Frontend)
 
-## Getting Started
+Next.js (App Router) frontend for a Quran reading experience.
 
-First, run the development server:
+### Features
+
+- Surah sidebar with all 114 surahs (desktop) and a collapsible drawer on mobile
+- Ayah reader with Arabic RTL rendering and English translation
+- Per-ayah audio playback controls
+- Search modal to find ayahs by English translation text
+- Display settings: Arabic font family, Arabic font size, translation font size (persisted via localStorage)
+
+### Tech
+
+- Next.js + React (TypeScript)
+- Tailwind CSS (via PostCSS) plus project-level CSS variables in `app/globals.css`
+
+### Environment variables
+
+Create `frontend/.env.local`:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+NEXT_PUBLIC_API_URL=http://localhost:4000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+If not set, the app defaults to `http://localhost:4000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Run locally
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm install
+npm run dev
+```
 
-## Learn More
+Open `http://localhost:3000`.
 
-To learn more about Next.js, take a look at the following resources:
+### Key files
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `app/page.tsx`: Main reader shell and responsive layout
+- `app/components/SurahSidebar.tsx`: Surah list and filtering
+- `app/components/AyahReader.tsx`: Surah header, ayah rendering, and playback UI
+- `app/components/SearchPanel.tsx`: Search UI (modal)
+- `app/components/SettingsPanel.tsx` and `app/context/SettingsContext.tsx`: Display settings and persistence

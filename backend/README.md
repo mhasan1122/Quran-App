@@ -1,46 +1,62 @@
-# Quran Mazid Backend
+## Quran Mazid (Backend API)
 
-Hono + TypeScript API that serves Quran data from MongoDB Atlas and free recitation audio URLs (islamic.network CDN). Powers the `frontend/` Next.js app.
+Hono + TypeScript API that serves Quran data and provides free recitation audio URLs for the Next.js frontend in `../frontend`.
 
-## Run
+### Tech
+
+- Node.js + Hono (TypeScript)
+- MongoDB as the data store
+
+### Setup
+
+Install dependencies:
 
 ```bash
 npm install
-npm run dev      # tsx watch on http://localhost:4000
-npm run build    # tsc -> dist/
-npm start        # node dist/index.js
 ```
 
-Environment variables (`.env`):
+Create a `.env` file (or copy the example):
 
+```bash
+cp .env.example .env
 ```
+
+Expected environment variables:
+
+```bash
 MONGODB_URI=mongodb+srv://USER:PASSWORD@CLUSTER/?appName=QuranDatabase
-MONGODB_DB=quran
+MONGODB_DB=QuranDatabase
 PORT=4000
 CORS_ORIGIN=http://localhost:3000
 ```
 
-## Endpoints
+### Run
 
-| Method | Path | Description |
-| --- | --- | --- |
-| GET | `/health` | Pings MongoDB. |
-| GET | `/api/surahs` | Lists all 114 surahs (metadata only). |
-| GET | `/api/surahs/:num` | Returns a surah with all its ayahs and per-ayah audio URLs. Optional `?reciter=`. |
-| GET | `/api/search?q=...&limit=30` | Full-text search across English translations (case-insensitive). |
-| GET | `/api/audio/reciters` | Lists available reciters and the default. |
-| GET | `/api/audio/surah/:num?reciter=` | Audio URL for a full surah. |
-| GET | `/api/audio/ayah/:surah/:ayah?reciter=` | Audio URL for a single ayah. |
+```bash
+npm run dev
+```
 
-## Data shape
+The server listens on `http://localhost:4000` by default.
 
-The MongoDB `surahs` collection (already seeded) uses:
+### API endpoints
+
+- `GET /health`: Ping MongoDB
+- `GET /api/surahs`: List all 114 surahs (metadata only)
+- `GET /api/surahs/:num`: Surah details including ayahs and per-ayah audio URLs (optional `?reciter=...`)
+- `GET /api/search?q=...&limit=30`: Search across English translations (case-insensitive)
+- `GET /api/audio/reciters`: List supported reciters and the default
+- `GET /api/audio/surah/:num?reciter=...`: Full-surah MP3 URL
+- `GET /api/audio/ayah/:surah/:ayah?reciter=...`: Single-ayah MP3 URL
+
+### Database schema (required)
+
+The API expects a MongoDB collection named `surahs` with documents shaped like:
 
 ```ts
 {
   number: 1,
   arabicName: 'الفاتحة',
-  englishName: 'الفاتحة',     // (DB stores arabic here)
+  englishName: 'الفاتحة',
   transliteration: 'Al-Fatihah',
   totalAyahs: 7,
   revelationType: 'Meccan',
@@ -48,17 +64,21 @@ The MongoDB `surahs` collection (already seeded) uses:
 }
 ```
 
-The API normalises this for the frontend so `englishName` is always the transliteration (e.g. `Al-Fatihah`) and adds `englishNameTranslation` (e.g. `The Opening`) from a static metadata table.
+The API normalizes the response for the frontend and adds `englishNameTranslation` from a static metadata table.
 
-## Audio source
+### Audio source
 
-We use the free [islamic.network CDN](https://alquran.cloud/cdn):
+Audio URLs are generated using free public CDNs:
 
-- per-ayah: `https://cdn.islamic.network/quran/audio/128/{reciter}/{globalAyah}.mp3`
-- per-surah: `https://cdn.islamic.network/quran/audio-surah/128/{reciter}/{surah}.mp3`
+- Per-ayah: `https://cdn.islamic.network/quran/audio/128/{reciter}/{globalAyah}.mp3`
+- Per-surah: `https://cdn.islamic.network/quran/audio-surah/128/{reciter}/{surah}.mp3`
 
-`globalAyah` is the 1..6236 sequential ayah number, computed from the standard surah ayah counts.
+`globalAyah` is the 1..6236 sequential ayah index derived from standard surah ayah counts.
 
-## Scripts
+### Utilities
 
-- `npm run inspect` - prints DB collections and a sample document. Useful for re-checking the schema.
+```bash
+npm run inspect
+```
+
+Prints DB collections and a sample document to help validate the schema.
