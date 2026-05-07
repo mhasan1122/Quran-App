@@ -1,5 +1,6 @@
 'use client';
-import { BookOpen, Search, Settings, Bookmark, Home, Moon, List, Info } from 'lucide-react';
+import { Bookmark, List, Info } from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation';
 
 interface Props {
   activePanel: string;
@@ -12,6 +13,8 @@ const icons = [
 ];
 
 export default function IconSidebar({ activePanel, onPanelChange }: Props) {
+  const router = useRouter();
+  const pathname = usePathname();
   return (
     <div
       style={{
@@ -66,7 +69,19 @@ export default function IconSidebar({ activePanel, onPanelChange }: Props) {
           <button
             key={id}
             className={`icon-btn ${activePanel === id ? 'active' : ''}`}
-            onClick={() => onPanelChange(activePanel === id ? '' : id)}
+            onClick={() => {
+              if (id === 'surah') {
+                if (pathname !== '/') router.push('/');
+                onPanelChange('surah');
+                return;
+              }
+              if (id === 'bookmark') {
+                if (pathname !== '/saved') router.push('/saved');
+                onPanelChange('bookmark');
+                return;
+              }
+              onPanelChange(activePanel === id ? '' : id);
+            }}
             title={label}
           >
             <span className="tooltip">{label}</span>

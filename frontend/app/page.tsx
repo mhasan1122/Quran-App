@@ -40,7 +40,7 @@ export default function Home() {
     if (isMobile) setSurahSidebarOpen(false);
   };
 
-  const showSurahPanel = !isMobile || activePanel === 'surah';
+  const showLeftPanel = !isMobile || activePanel === 'surah';
   const showSearchModal = activePanel === 'search';
 
   return (
@@ -56,7 +56,7 @@ export default function Home() {
       {/* Surah Sidebar (desktop: always in middle, mobile: drawer) */}
       <div style={{
         width: 'var(--sidebar-surah-width)', minWidth: 'var(--sidebar-surah-width)',
-        display: showSurahPanel ? 'flex' : (isMobile ? 'flex' : 'none'),
+        display: showLeftPanel ? 'flex' : (isMobile ? 'flex' : 'none'),
         flexDirection: 'column',
         ...(isMobile ? {
           position: 'fixed', left: 56, top: 0, height: '100%', zIndex: 50,

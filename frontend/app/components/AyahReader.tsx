@@ -4,6 +4,8 @@ import { Bookmark, Share2, Copy, ChevronLeft, ChevronRight, Loader2 } from 'luci
 import { fetchSurah, SurahData } from '../lib/quranApi';
 import { revelationImagePath, revelationShortLabel } from '../data/revelationIcons';
 import { useSettings, getArabicFontClass } from '../context/SettingsContext';
+import { useCollections } from '../context/CollectionsContext';
+import AddToCollectionsModal from './AddToCollectionsModal';
 
 interface Props {
   surahNumber: number;
@@ -21,9 +23,13 @@ export default function AyahReader({ surahNumber, onPrev, onNext }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState<number | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [selectedAyah, setSelectedAyah] = useState<{ surahNumber: number; ayahNumberInSurah: number; arabicText: string; translation: string } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { settings } = useSettings();
+  const { getFolders, isInFolder } = useCollections();
   const arabicFontClass = getArabicFontClass(settings.arabicFont);
+  const favoritesFolderId = getFolders('bookmark')[0]?.id ?? 'favorites';
 
   useEffect(() => {
     setLoading(true);
@@ -45,6 +51,11 @@ export default function AyahReader({ surahNumber, onPrev, onNext }: Props) {
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: 'var(--bg-primary)' }}>
+      <AddToCollectionsModal
+        open={addOpen}
+        ayah={selectedAyah}
+        onClose={() => { setAddOpen(false); setSelectedAyah(null); }}
+      />
       {/* Top Bar */}
       <div className="top-header" style={{ justifyContent: 'space-between', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -177,8 +188,27 @@ export default function AyahReader({ surahNumber, onPrev, onNext }: Props) {
                       <Copy size={13} />
                     </button>
                     <button
-                      style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4, borderRadius: 4, display: 'flex', alignItems: 'center' }}
-                      title="Bookmark"
+                      onClick={() => {
+                        setSelectedAyah({
+                          surahNumber,
+                          ayahNumberInSurah: ayah.numberInSurah,
+                          arabicText: ayah.text,
+                          translation: ayah.translation,
+                        });
+                        setAddOpen(true);
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: isInFolder(favoritesFolderId, surahNumber, ayah.numberInSurah) ? 'var(--accent-gold)' : 'var(--text-muted)',
+                        cursor: 'pointer',
+                        padding: 4,
+                        borderRadius: 4,
+                        display: 'flex',
+                        alignItems: 'center',
+                        transition: 'color 0.15s',
+                      }}
+                      title={isInFolder(favoritesFolderId, surahNumber, ayah.numberInSurah) ? 'Saved' : 'Save'}
                     >
                       <Bookmark size={13} />
                     </button>
@@ -201,7 +231,7 @@ export default function AyahReader({ surahNumber, onPrev, onNext }: Props) {
 
                 {/* Translation */}
                 {settings.showTranslation && (
-                  <p style={{ fontSize: settings.translationFontSize, color: 'var(--text-secondary)', lineHeight: 1.75, fontFamily: 'Lato, sans-serif', fontWeight: 300 }}>
+                  <p style={{ fontSize: settings.translationFontSize, color: 'var(--accent-on-primary)', lineHeight: 1.75, fontFamily: 'Lato, sans-serif', fontWeight: 300 }}>
                     {ayah.translation}
                   </p>
                 )}
