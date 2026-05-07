@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
-import { Bookmark, Share2, Copy, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Bookmark, Share2, Copy, ChevronLeft, ChevronRight, Loader2, Play, Pause } from 'lucide-react';
 import { fetchSurah, SurahData } from '../lib/quranApi';
 import { revelationImagePath, revelationShortLabel } from '../data/revelationIcons';
 import { useSettings, getArabicFontClass } from '../context/SettingsContext';
@@ -25,11 +25,63 @@ export default function AyahReader({ surahNumber, onPrev, onNext }: Props) {
   const [copied, setCopied] = useState<number | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [selectedAyah, setSelectedAyah] = useState<{ surahNumber: number; ayahNumberInSurah: number; arabicText: string; translation: string } | null>(null);
+  const [playingAyah, setPlayingAyah] = useState<number | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { settings } = useSettings();
   const { getFolders, isInFolder } = useCollections();
   const arabicFontClass = getArabicFontClass(settings.arabicFont);
   const favoritesFolderId = getFolders('bookmark')[0]?.id ?? 'favorites';
+
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.pause();
+    audioRef.current = null;
+    setPlayingAyah(null);
+  }, [surahNumber]);
+
+  const togglePlayAyah = (ayahNumberInSurah: number, url: string | null) => {
+    if (!url) return;
+    if (playingAyah === ayahNumberInSurah && audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+      setPlayingAyah(null);
+      return;
+    }
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    const a = new Audio(url);
+    audioRef.current = a;
+    a.addEventListener('ended', () => {
+      if (audioRef.current === a) {
+        audioRef.current = null;
+        setPlayingAyah(null);
+      }
+    });
+    a.addEventListener('error', () => {
+      if (audioRef.current === a) {
+        audioRef.current = null;
+        setPlayingAyah(null);
+      }
+    });
+    setPlayingAyah(ayahNumberInSurah);
+    void a.play().catch(() => {
+      if (audioRef.current === a) {
+        audioRef.current = null;
+        setPlayingAyah(null);
+      }
+    });
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -150,7 +202,7 @@ export default function AyahReader({ surahNumber, onPrev, onNext }: Props) {
 
             {/* Ayahs */}
             {surahData.ayahs.map((ayah) => (
-              <div key={ayah.number} className="ayah-card">
+              <div key={ayah.numberInSurah} className="ayah-card">
                 {/* Verse Number Header */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -175,17 +227,29 @@ export default function AyahReader({ surahNumber, onPrev, onNext }: Props) {
                   </div>
 
                   {/* Action buttons */}
-                  <div style={{ display: 'flex', gap: 4 }}>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button
+                      onClick={() => togglePlayAyah(ayah.numberInSurah, ayah.audio)}
+                      disabled={!ayah.audio}
+                      className="ayah-action-btn"
+                      style={{
+                        background: playingAyah === ayah.numberInSurah ? 'var(--accent-muted-bg)' : 'none',
+                        color: playingAyah === ayah.numberInSurah ? 'var(--accent-gold)' : 'var(--text-muted)',
+                        cursor: ayah.audio ? 'pointer' : 'not-allowed',
+                      }}
+                      title={playingAyah === ayah.numberInSurah ? 'Pause recitation' : 'Play recitation'}
+                    >
+                      {playingAyah === ayah.numberInSurah ? <Pause size={20} /> : <Play size={20} />}
+                    </button>
                     <button
                       onClick={() => handleCopy(`${ayah.text}\n\n${ayah.translation}`, ayah.numberInSurah)}
+                      className="ayah-action-btn"
                       style={{
-                        background: 'none', border: 'none', color: copied === ayah.numberInSurah ? 'var(--accent-gold)' : 'var(--text-muted)',
-                        cursor: 'pointer', padding: 4, borderRadius: 4, transition: 'color 0.15s',
-                        display: 'flex', alignItems: 'center',
+                        color: copied === ayah.numberInSurah ? 'var(--accent-gold)' : 'var(--text-muted)',
                       }}
                       title="Copy verse"
                     >
-                      <Copy size={13} />
+                      <Copy size={20} />
                     </button>
                     <button
                       onClick={() => {
@@ -197,26 +261,20 @@ export default function AyahReader({ surahNumber, onPrev, onNext }: Props) {
                         });
                         setAddOpen(true);
                       }}
+                      className="ayah-action-btn"
                       style={{
-                        background: 'none',
-                        border: 'none',
                         color: isInFolder(favoritesFolderId, surahNumber, ayah.numberInSurah) ? 'var(--accent-gold)' : 'var(--text-muted)',
-                        cursor: 'pointer',
-                        padding: 4,
-                        borderRadius: 4,
-                        display: 'flex',
-                        alignItems: 'center',
-                        transition: 'color 0.15s',
                       }}
                       title={isInFolder(favoritesFolderId, surahNumber, ayah.numberInSurah) ? 'Saved' : 'Save'}
                     >
-                      <Bookmark size={13} />
+                      <Bookmark size={20} />
                     </button>
                     <button
-                      style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4, borderRadius: 4, display: 'flex', alignItems: 'center' }}
+                      className="ayah-action-btn"
+                      style={{ color: 'var(--text-muted)' }}
                       title="Share"
                     >
-                      <Share2 size={13} />
+                      <Share2 size={20} />
                     </button>
                   </div>
                 </div>

@@ -1,13 +1,9 @@
 'use client';
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { Search, X, Loader2, ArrowRight } from 'lucide-react';
+import { searchAyahs, SearchResultItem } from '../lib/quranApi';
 
-interface SearchResult {
-  numberInSurah: number;
-  text: string;
-  surahNumber: number;
-  surahName: string;
-}
+type SearchResult = SearchResultItem;
 
 interface Props {
   onNavigate: (surahNum: number) => void;
@@ -73,18 +69,8 @@ export default function SearchPanel({ onNavigate, variant = 'sidebar', onClose }
     if (!q.trim()) { setResults([]); setSearched(false); return; }
     setLoading(true);
     try {
-      const res = await fetch(`https://api.alquran.cloud/v1/search/${encodeURIComponent(q)}/all/en.sahih`);
-      const data = await res.json();
-      if (data.data?.matches) {
-        setResults(data.data.matches.slice(0, 30).map((m: any) => ({
-          numberInSurah: m.numberInSurah,
-          text: m.text,
-          surahNumber: m.surah?.number,
-          surahName: m.surah?.englishName,
-        })));
-      } else {
-        setResults([]);
-      }
+      const items = await searchAyahs(q, 30);
+      setResults(items);
     } catch {
       setResults([]);
     } finally {

@@ -146,6 +146,21 @@ html, body {
 }
 .ayah-card:hover { background: rgba(255,255,255,0.02); }
 
+.ayah-action-btn {
+  width: 36px; height: 36px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: none; border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.05s ease;
+}
+.ayah-action-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--accent-gold-light);
+}
+.ayah-action-btn:active:not(:disabled) { transform: scale(0.94); }
+.ayah-action-btn:disabled { opacity: 0.4; }
+
 .icon-btn {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   width: 100%; padding: 11px 4px; gap: 3px; cursor: pointer;

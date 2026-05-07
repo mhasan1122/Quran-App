@@ -1,79 +1,97 @@
 export interface Ayah {
-  number: number;
   numberInSurah: number;
   text: string; // Arabic text
   translation: string;
-  juz: number;
-  page: number;
+  audio: string | null; // direct mp3 URL for this ayah
 }
 
-export interface SurahData {
+export interface SurahSummary {
   number: number;
-  name: string;
+  name: string; // Arabic name
   englishName: string;
   englishNameTranslation: string;
   numberOfAyahs: number;
-  revelationType: string;
+  revelationType: 'Meccan' | 'Medinan';
+}
+
+export interface SurahData extends SurahSummary {
+  audio: string | null; // full-surah mp3 URL
+  reciter: string;
   ayahs: Ayah[];
 }
 
-const API_BASE = 'https://api.alquran.cloud/v1';
-
-export async function fetchSurah(surahNumber: number): Promise<SurahData> {
-  const [arabicRes, translationRes] = await Promise.all([
-    fetch(`${API_BASE}/surah/${surahNumber}`),
-    fetch(`${API_BASE}/surah/${surahNumber}/en.sahih`),
-  ]);
-
-  const [arabicData, translationData] = await Promise.all([
-    arabicRes.json(),
-    translationRes.json(),
-  ]);
-
-  const arabic = arabicData.data;
-  const translation = translationData.data;
-
-  const ayahs: Ayah[] = arabic.ayahs.map((a: any, i: number) => ({
-    number: a.number,
-    numberInSurah: a.numberInSurah,
-    text: a.text,
-    translation: translation.ayahs[i]?.text || '',
-    juz: a.juz,
-    page: a.page,
-  }));
-
-  return {
-    number: arabic.number,
-    name: arabic.name,
-    englishName: arabic.englishName,
-    englishNameTranslation: arabic.englishNameTranslation,
-    numberOfAyahs: arabic.numberOfAyahs,
-    revelationType: arabic.revelationType,
-    ayahs,
-  };
+export interface SearchResultItem {
+  surahNumber: number;
+  surahName: string;       // transliterated, e.g. "Al-Baqarah"
+  surahArabicName: string; // Arabic name
+  surahMeaning: string;    // English translation, e.g. "The Cow"
+  numberInSurah: number;
+  text: string;            // matching English translation
+  arabic: string;          // Arabic text of the ayah
 }
 
-export async function searchAyahs(query: string, surahNumber?: number): Promise<Array<{ ayah: Ayah; surahNumber: number; surahName: string }>> {
-  if (!query.trim()) return [];
-  const url = surahNumber
-    ? `${API_BASE}/search/${encodeURIComponent(query)}/all/en.sahih`
-    : `${API_BASE}/search/${encodeURIComponent(query)}/all/en.sahih`;
+export interface Reciter {
+  id: string;
+  name: string;
+}
 
-  const res = await fetch(url);
-  const data = await res.json();
+const API_BASE =
+  (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_URL) ||
+  'http://localhost:4000';
 
-  if (!data.data?.matches) return [];
+async function getJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...init,
+    headers: { Accept: 'application/json', ...(init?.headers || {}) },
+  });
+  if (!res.ok) {
+    let detail = '';
+    try {
+      detail = (await res.json()).error || '';
+    } catch {}
+    throw new Error(`API ${path} failed: ${res.status} ${detail}`.trim());
+  }
+  return res.json() as Promise<T>;
+}
 
-  return data.data.matches.slice(0, 50).map((m: any) => ({
-    ayah: {
-      number: m.number,
-      numberInSurah: m.numberInSurah,
-      text: m.text || '',
-      translation: m.text || '',
-      juz: m.juz,
-      page: m.page,
-    },
-    surahNumber: m.surah?.number || 0,
-    surahName: m.surah?.englishName || '',
-  }));
+export function fetchAllSurahs(): Promise<SurahSummary[]> {
+  return getJson<SurahSummary[]>('/api/surahs');
+}
+
+export function fetchSurah(
+  surahNumber: number,
+  reciter?: string,
+): Promise<SurahData> {
+  const qs = reciter ? `?reciter=${encodeURIComponent(reciter)}` : '';
+  return getJson<SurahData>(`/api/surahs/${surahNumber}${qs}`);
+}
+
+export async function searchAyahs(query: string, limit = 30): Promise<SearchResultItem[]> {
+  const q = query.trim();
+  if (q.length < 2) return [];
+  const data = await getJson<{ total: number; results: SearchResultItem[] }>(
+    `/api/search?q=${encodeURIComponent(q)}&limit=${limit}`,
+  );
+  return data.results;
+}
+
+export function fetchReciters(): Promise<{ default: string; reciters: Reciter[] }> {
+  return getJson('/api/audio/reciters');
+}
+
+export function ayahAudioUrl(
+  surahNumber: number,
+  ayahNumberInSurah: number,
+  reciter?: string,
+): Promise<{ url: string; reciter: string }> {
+  const qs = reciter ? `?reciter=${encodeURIComponent(reciter)}` : '';
+  return getJson(`/api/audio/ayah/${surahNumber}/${ayahNumberInSurah}${qs}`);
+}
+
+export function surahAudioUrl(
+  surahNumber: number,
+  reciter?: string,
+): Promise<{ url: string; reciter: string }> {
+  const qs = reciter ? `?reciter=${encodeURIComponent(reciter)}` : '';
+  return getJson(`/api/audio/surah/${surahNumber}${qs}`);
 }
