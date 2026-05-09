@@ -74,24 +74,30 @@ export default function AyahReader({ surahNumber }: Props) {
     });
   };
 
-  const togglePlayAyah = (ayahNumberInSurah: number, url: string | null, wordsCount: number) => {
-    if (!url) return;
-    if (playSourceRef.current === 'ayah' && playingAyah === ayahNumberInSurah) {
+  const playAyahAtIndex = (index: number) => {
+    if (!surahData) return;
+    const ayah = surahData.ayahs[index];
+    if (!ayah || !ayah.audio) {
       stopAudio();
       return;
     }
+    const ayahNumberInSurah = ayah.numberInSurah;
+    const wordsCount = ayah.text.split(/\s+/).filter(Boolean).length;
 
     const localSeqId = ++seqIdRef.current;
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
     }
-    const a = new Audio(url);
+    const a = new Audio(ayah.audio);
     a.preload = 'auto';
     audioRef.current = a;
     playSourceRef.current = 'ayah';
     setPlayingAyah(ayahNumberInSurah);
     setPlayingWord(wordsCount > 0 ? { ayah: ayahNumberInSurah, word: 1 } : null);
+
+    const el = containerRef.current?.querySelector<HTMLElement>(`[data-ayah="${ayahNumberInSurah}"]`);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
     const updateHighlight = () => {
       if (seqIdRef.current !== localSeqId) return;
@@ -108,7 +114,13 @@ export default function AyahReader({ surahNumber }: Props) {
     a.addEventListener('loadedmetadata', updateHighlight);
     a.addEventListener('timeupdate', updateHighlight);
     a.addEventListener('ended', () => {
-      if (audioRef.current === a) stopAudio();
+      if (audioRef.current !== a) return;
+      const nextIndex = index + 1;
+      if (nextIndex < surahData.ayahs.length) {
+        playAyahAtIndex(nextIndex);
+      } else {
+        stopAudio();
+      }
     });
     a.addEventListener('error', () => {
       if (audioRef.current === a) stopAudio();
@@ -117,6 +129,17 @@ export default function AyahReader({ surahNumber }: Props) {
     void a.play().catch(() => {
       if (audioRef.current === a) stopAudio();
     });
+  };
+
+  const togglePlayAyah = (ayahNumberInSurah: number) => {
+    if (!surahData) return;
+    if (playSourceRef.current === 'ayah' && playingAyah === ayahNumberInSurah) {
+      stopAudio();
+      return;
+    }
+    const index = surahData.ayahs.findIndex((a) => a.numberInSurah === ayahNumberInSurah);
+    if (index === -1) return;
+    playAyahAtIndex(index);
   };
 
   // Word-by-word audio uses Quran.com's free CDN:
@@ -224,7 +247,7 @@ export default function AyahReader({ surahNumber }: Props) {
 
             {/* Ayahs */}
             {surahData.ayahs.map((ayah) => (
-              <div key={ayah.numberInSurah} className="ayah-card">
+              <div key={ayah.numberInSurah} className="ayah-card" data-ayah={ayah.numberInSurah}>
                 {/* Verse Number Header */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -251,10 +274,7 @@ export default function AyahReader({ surahNumber }: Props) {
                   {/* Action buttons */}
                   <div style={{ display: 'flex', gap: 6 }}>
                     <button
-                      onClick={() => {
-                        const wordsCount = ayah.text.split(/\s+/).filter(Boolean).length;
-                        togglePlayAyah(ayah.numberInSurah, ayah.audio, wordsCount);
-                      }}
+                      onClick={() => togglePlayAyah(ayah.numberInSurah)}
                       disabled={!ayah.audio}
                       className="ayah-action-btn"
                       style={{
