@@ -4,7 +4,7 @@ This repository contains a Quran reader web app with a Next.js frontend and a Ho
 
 ### Hosted links
 
-- **Website (Frontend)**: `https://quran-app-9t45.vercel.app/`
+- **Website (Frontend / live demo)**: [https://quran-app-et4v.vercel.app/](https://quran-app-et4v.vercel.app/)
 - **Backend API (Base URL)**: `https://quran-app-50vf.onrender.com`
   - Example: `https://quran-app-50vf.onrender.com/api/surahs`
 
