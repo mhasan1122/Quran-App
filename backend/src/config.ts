@@ -10,5 +10,8 @@ export const config = {
   mongoUri: required('MONGODB_URI'),
   mongoDb: process.env.MONGODB_DB || 'quran',
   port: Number(process.env.PORT || 4000),
-  corsOrigin: process.env.CORS_ORIGIN || '*',
+  // Treat empty-string env var as "unset" (common in some hosts dashboards).
+  corsOrigin: (process.env.CORS_ORIGIN && process.env.CORS_ORIGIN.trim().length > 0)
+    ? process.env.CORS_ORIGIN
+    : '*',
 } as const;

@@ -11,6 +11,22 @@ import { audioRoutes } from './routes/audio.js';
 const app = new Hono();
 
 app.use('*', logger());
+
+function isAllowedOrigin(origin: string, allowList: string[]): boolean {
+  const o = origin.trim();
+  return allowList.some((entryRaw) => {
+    const entry = entryRaw.trim();
+    if (!entry) return false;
+    if (entry === o) return true;
+    // Very small wildcard support, e.g. "https://*.vercel.app"
+    if (entry.includes('*')) {
+      const escaped = entry.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\\\*/g, '.*');
+      return new RegExp(`^${escaped}$`).test(o);
+    }
+    return false;
+  });
+}
+
 app.use(
   '*',
   cors({
@@ -18,7 +34,7 @@ app.use(
       if (!origin) return '';
       if (config.corsOrigin === '*') return origin;
       const allowed = config.corsOrigin.split(',').map((s) => s.trim());
-      return allowed.includes(origin) ? origin : '';
+      return isAllowedOrigin(origin, allowed) ? origin : '';
     },
     allowMethods: ['GET', 'POST', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
