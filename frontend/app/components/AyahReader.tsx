@@ -9,8 +9,6 @@ import AddToCollectionsModal from './AddToCollectionsModal';
 
 interface Props {
   surahNumber: number;
-  onPrev: () => void;
-  onNext: () => void;
 }
 
 const BASMALA = 'بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ';
@@ -18,7 +16,7 @@ const BASMALA = 'بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَ
 // Surahs that don't have Basmala (At-Tawbah = 9, Al-Fatihah has it as first verse)
 const NO_BASMALA = [1, 9];
 
-export default function AyahReader({ surahNumber, onPrev, onNext }: Props) {
+export default function AyahReader({ surahNumber }: Props) {
   const [surahData, setSurahData] = useState<SurahData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -132,38 +130,6 @@ export default function AyahReader({ surahNumber, onPrev, onNext }: Props) {
         ayah={selectedAyah}
         onClose={() => { setAddOpen(false); setSelectedAyah(null); }}
       />
-      {/* Desktop-only top bar (mobile uses the app-level bar in page.tsx) */}
-      <div className="top-header hide-mobile" style={{ justifyContent: 'space-between', gap: 8 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button
-            onClick={onPrev}
-            disabled={surahNumber <= 1}
-            style={{
-              background: 'none', border: '1px solid var(--border-color)', borderRadius: 4,
-              color: surahNumber <= 1 ? 'var(--text-muted)' : 'var(--text-secondary)',
-              cursor: surahNumber <= 1 ? 'not-allowed' : 'pointer',
-              padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12,
-            }}
-          >
-            <ChevronLeft size={14} />
-            <span>Prev</span>
-          </button>
-          <button
-            onClick={onNext}
-            disabled={surahNumber >= 114}
-            style={{
-              background: 'none', border: '1px solid var(--border-color)', borderRadius: 4,
-              color: surahNumber >= 114 ? 'var(--text-muted)' : 'var(--text-secondary)',
-              cursor: surahNumber >= 114 ? 'not-allowed' : 'pointer',
-              padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12,
-            }}
-          >
-            <span>Next</span>
-            <ChevronRight size={14} />
-          </button>
-        </div>
-        <div style={{ flex: 1 }} />
-      </div>
 
       {/* Content */}
       <div ref={containerRef} style={{ flex: 1, overflowY: 'auto' }}>
@@ -196,8 +162,8 @@ export default function AyahReader({ surahNumber, onPrev, onNext }: Props) {
                 <img
                   src={revelationImagePath(surahData.revelationType)}
                   alt=""
-                  width={16}
-                  height={16}
+                  width={100}
+                  height={100}
                   className="revelation-strip-icon"
                 />
                 <div style={{ flex: 1, minWidth: 0, textAlign: 'center' }}>
@@ -341,32 +307,6 @@ export default function AyahReader({ surahNumber, onPrev, onNext }: Props) {
             <div style={{ padding: '32px 24px', textAlign: 'center', borderTop: '1px solid var(--border-color)' }}>
               <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16 }}>
                 — End of Surah {surahData.englishName} —
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
-                {surahNumber > 1 && (
-                  <button
-                    onClick={onPrev}
-                    style={{
-                      background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', borderRadius: 6,
-                      color: 'var(--text-secondary)', cursor: 'pointer', padding: '8px 18px',
-                      fontSize: 13, display: 'flex', alignItems: 'center', gap: 6,
-                    }}
-                  >
-                    <ChevronLeft size={14} /> Previous Surah
-                  </button>
-                )}
-                {surahNumber < 114 && (
-                  <button
-                    onClick={onNext}
-                    style={{
-                      background: 'var(--accent-gold)', border: 'none', borderRadius: 6,
-                      color: 'var(--accent-on-primary)', cursor: 'pointer', padding: '8px 18px',
-                      fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6,
-                    }}
-                  >
-                    Next Surah <ChevronRight size={14} />
-                  </button>
-                )}
               </div>
             </div>
           </>

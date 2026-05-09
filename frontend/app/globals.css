@@ -6,9 +6,9 @@
 
 :root {
   /* Quran Mazid dark theme (https://quranmazid.com) — primary green hsl(112 39% 36%) */
-  --bg-primary: #0d0d0d;
-  --bg-secondary: #171717;
-  --bg-tertiary: #1c1c1c;
+  --bg-primary: #0C0C0C;
+  --bg-secondary: var(--bg-primary);
+  --bg-tertiary: var(--bg-primary);
   --bg-hover: #242424;
   --bg-active: #1e241e;
   --border-color: #212121;
@@ -192,7 +192,7 @@ html, body {
 
 /* Quran Mazid–style compact strip: flat charcoal, faint icon left, centered title */
 .surah-header-strip {
-  background: #0f0f0f;
+  background: var(--bg-primary);
   border-bottom: 1px solid #1c1c1c;
   padding: 18px 16px;
   position: relative;
@@ -226,11 +226,10 @@ html, body {
 /* Faint light-grey silhouette (dark PNG on charcoal) */
 .revelation-strip-icon {
   flex-shrink: 0;
-  width: 16px;
-  height: 16px;
+  width: 100px;
+  height: 100px;
   object-fit: contain;
-  opacity: 0.55;
-  filter: invert(1) brightness(0.72);
+  opacity: 100;
 }
 .surah-header-strip-spacer {
   flex-shrink: 0;
@@ -362,7 +361,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
   right: 0;
   bottom: 0;
   height: 64px;
-  background: rgba(20, 20, 20, 0.92);
+  background: rgba(12, 12, 12, 0.92);
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(10px);
   display: flex;

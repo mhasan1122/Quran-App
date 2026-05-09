@@ -288,8 +288,6 @@ export default function Home() {
 
         <AyahReader
           surahNumber={activeSurah}
-          onPrev={() => setActiveSurah(n => Math.max(1, n - 1))}
-          onNext={() => setActiveSurah(n => Math.min(114, n + 1))}
         />
       </div>
 
