@@ -2,6 +2,12 @@
 
 This repository contains a Quran reader web app with a Next.js frontend and a Hono (Node.js) backend API. The UI is styled to match the general look and interaction patterns of QuranMazid’s reader experience.
 
+### Hosted links
+
+- **Website (Frontend)**: `https://quran-app-9t45.vercel.app/`
+- **Backend API (Base URL)**: `https://quran-app-50vf.onrender.com`
+  - Example: `https://quran-app-50vf.onrender.com/api/surahs`
+
 ### What’s inside
 
 - **`frontend/`**: Next.js (TypeScript) app providing the reader UI (surah list, ayah reader, search modal, display settings).

@@ -27,6 +27,7 @@ export default function AyahReader({ surahNumber }: Props) {
   const [playingWord, setPlayingWord] = useState<{ ayah: number; word: number } | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const playSourceRef = useRef<'ayah' | 'word' | null>(null);
+  const seqIdRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const { settings } = useSettings();
   const { getFolders, isInFolder } = useCollections();
@@ -34,6 +35,7 @@ export default function AyahReader({ surahNumber }: Props) {
   const favoritesFolderId = getFolders('bookmark')[0]?.id ?? 'favorites';
 
   const stopAudio = () => {
+    seqIdRef.current += 1;
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
@@ -72,15 +74,48 @@ export default function AyahReader({ surahNumber }: Props) {
     });
   };
 
-  const togglePlayAyah = (ayahNumberInSurah: number, url: string | null) => {
+  const togglePlayAyah = (ayahNumberInSurah: number, url: string | null, wordsCount: number) => {
     if (!url) return;
     if (playSourceRef.current === 'ayah' && playingAyah === ayahNumberInSurah) {
       stopAudio();
       return;
     }
-    playUrl(url, 'ayah', () => {
-      setPlayingAyah(ayahNumberInSurah);
-      setPlayingWord(null);
+
+    const localSeqId = ++seqIdRef.current;
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    const a = new Audio(url);
+    a.preload = 'auto';
+    audioRef.current = a;
+    playSourceRef.current = 'ayah';
+    setPlayingAyah(ayahNumberInSurah);
+    setPlayingWord(wordsCount > 0 ? { ayah: ayahNumberInSurah, word: 1 } : null);
+
+    const updateHighlight = () => {
+      if (seqIdRef.current !== localSeqId) return;
+      if (!Number.isFinite(a.duration) || a.duration <= 0 || wordsCount <= 0) return;
+      const perWord = a.duration / wordsCount;
+      const idx0 = Math.max(0, Math.min(wordsCount - 1, Math.floor(a.currentTime / perWord)));
+      const word = idx0 + 1;
+      setPlayingWord((prev) => {
+        if (prev?.ayah === ayahNumberInSurah && prev.word === word) return prev;
+        return { ayah: ayahNumberInSurah, word };
+      });
+    };
+
+    a.addEventListener('loadedmetadata', updateHighlight);
+    a.addEventListener('timeupdate', updateHighlight);
+    a.addEventListener('ended', () => {
+      if (audioRef.current === a) stopAudio();
+    });
+    a.addEventListener('error', () => {
+      if (audioRef.current === a) stopAudio();
+    });
+
+    void a.play().catch(() => {
+      if (audioRef.current === a) stopAudio();
     });
   };
 
@@ -216,7 +251,10 @@ export default function AyahReader({ surahNumber }: Props) {
                   {/* Action buttons */}
                   <div style={{ display: 'flex', gap: 6 }}>
                     <button
-                      onClick={() => togglePlayAyah(ayah.numberInSurah, ayah.audio)}
+                      onClick={() => {
+                        const wordsCount = ayah.text.split(/\s+/).filter(Boolean).length;
+                        togglePlayAyah(ayah.numberInSurah, ayah.audio, wordsCount);
+                      }}
                       disabled={!ayah.audio}
                       className="ayah-action-btn"
                       style={{
